@@ -1,5 +1,6 @@
 package com.playcock.controller;
 
+import com.playcock.dto.request.SessionParticipantsUpdateRequest;
 import com.playcock.dto.request.SessionStartRequest;
 import com.playcock.dto.response.SessionResponse;
 import com.playcock.service.SessionService;
@@ -23,5 +24,15 @@ public class SessionController {
     @GetMapping("/current")
     public SessionResponse current() {
         return sessionService.getCurrent();
+    }
+
+    @PatchMapping("/current/participants")
+    public SessionResponse updateParticipants(@RequestBody SessionParticipantsUpdateRequest req) {
+        return sessionService.updateParticipants(req);
+    }
+
+    @PostMapping("/current/end")
+    public SessionResponse end() {
+        return sessionService.endCurrent();
     }
 }
