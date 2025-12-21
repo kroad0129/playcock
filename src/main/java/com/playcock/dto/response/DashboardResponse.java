@@ -2,6 +2,7 @@ package com.playcock.dto.response;
 
 import com.playcock.domain.player.Gender;
 import com.playcock.domain.player.PlayerType;
+import com.playcock.domain.session.MatchType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -102,20 +103,35 @@ public class DashboardResponse {
     public static class MatchCard {
         private final Long matchId;
         private final Integer matchNo;
+
+        // ✅ 추가: 경기 타입
+        private final MatchType matchType;
+
         private final LocalDateTime startedAt;
+
+        // ✅ 추가: 진행시간(초)
+        private final long elapsedSeconds;
+
         private final List<PlayerCard> members;
 
-        public MatchCard(Long matchId, Integer matchNo, LocalDateTime startedAt, List<PlayerCard> members) {
+        public MatchCard(Long matchId, Integer matchNo, MatchType matchType,
+                         LocalDateTime startedAt, long elapsedSeconds,
+                         List<PlayerCard> members) {
             this.matchId = matchId;
             this.matchNo = matchNo;
+            this.matchType = matchType;
             this.startedAt = startedAt;
+            this.elapsedSeconds = elapsedSeconds;
             this.members = members;
         }
 
         public Long getMatchId() { return matchId; }
         public Integer getMatchNo() { return matchNo; }
-        public LocalDateTime getStartedAt() { return startedAt; }
-        public List<PlayerCard> getMembers() { return members; }
 
+        public MatchType getMatchType() { return matchType; }           // ✅
+        public LocalDateTime getStartedAt() { return startedAt; }
+        public long getElapsedSeconds() { return elapsedSeconds; }      // ✅
+
+        public List<PlayerCard> getMembers() { return members; }
     }
 }

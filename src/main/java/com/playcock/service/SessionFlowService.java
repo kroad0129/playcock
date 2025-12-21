@@ -103,7 +103,21 @@ public class SessionFlowService {
                 .map(m -> {
                     List<DashboardResponse.PlayerCard> members = matchMembersMap.getOrDefault(m.getId(), List.of())
                             .stream().map(sp -> toPlayerCard(sp, now)).toList();
-                    return new DashboardResponse.MatchCard(m.getId(), m.getMatchNo(), m.getStartedAt(), members);
+
+                    long elapsedSeconds = 0L;
+                    if (m.getStartedAt() != null) {
+                        elapsedSeconds = Duration.between(m.getStartedAt(), now).getSeconds();
+                        if (elapsedSeconds < 0) elapsedSeconds = 0;
+                    }
+
+                    return new DashboardResponse.MatchCard(
+                            m.getId(),
+                            m.getMatchNo(),
+                            m.getMatchType(),     // ✅ 경기 타입
+                            m.getStartedAt(),
+                            elapsedSeconds,       // ✅ 진행시간(초)
+                            members
+                    );
                 })
                 .toList();
 

@@ -3,32 +3,38 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Playcock Admin Test</title>
+    <title>Playcock Admin (Readable)</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 16px; line-height: 1.35; }
         h1 { margin: 0 0 12px; }
         h2 { margin: 0 0 10px; font-size: 18px; }
+        h3 { margin: 14px 0 8px; font-size: 16px; }
         .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-        .box { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .box { border: 1px solid #ddd; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
         input, select, button { padding: 8px; }
         button { cursor:pointer; }
         .muted { color:#666; font-size: 13px; }
-        .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+        .grid { display:grid; grid-template-columns: 1fr 1.2fr; gap:12px; }
         @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-        pre { background:#f7f7f7; padding: 10px; border-radius: 8px; overflow:auto; max-height: 360px; }
+        pre { background:#f7f7f7; padding: 10px; border-radius: 10px; overflow:auto; max-height: 300px; }
         table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #eee; padding: 8px; font-size: 14px; }
-        th { background:#fafafa; text-align:left; }
-        .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-right:6px;}
+        th, td { border: 1px solid #eee; padding: 8px; font-size: 13px; vertical-align: top; }
+        th { background:#fafafa; text-align:left; position: sticky; top: 0; z-index: 1; }
+        .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-right:6px; }
         .ok { border-color: #b8e2b8; background:#effaef; }
         .warn { border-color:#f3d1a1; background:#fff7ea; }
         .bad { border-color:#f0b4b4; background:#fff0f0; }
-        .sectionTitle { display:flex; justify-content:space-between; align-items:center; gap:10px;}
+        .sectionTitle { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+        .clickable { color: #0b66c3; cursor: pointer; text-decoration: underline; }
+        .small { font-size: 12px; color: #666; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 900px) { .twoCol { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<h1>🏸 Playcock 통합 관리자 테스트</h1>
+<h1>🏸 Playcock 통합 관리자 테스트 (보기 쉬운 버전)</h1>
 <div class="muted">
     같은 서버(<code>localhost:8080</code>)에서 HTML을 서빙하면 CORS 없이 바로 동작합니다.
     <br/>주소: <code>http://localhost:8080/playcock-admin.html</code>
@@ -36,12 +42,16 @@
 
 <div class="grid">
 
-    <!-- LEFT: ClubPlayer -->
+    <!-- LEFT -->
     <div>
+
         <div class="box">
             <div class="sectionTitle">
-                <h2>1) 멤버(ClubPlayer) 등록</h2>
-                <button onclick="loadPlayers()">멤버 새로고침</button>
+                <h2>1) 멤버 등록</h2>
+                <div class="row">
+                    <button onclick="loadPlayers()">멤버 새로고침</button>
+                    <button onclick="loadDashboard()">대시보드 새로고침</button>
+                </div>
             </div>
 
             <div class="row">
@@ -52,13 +62,12 @@
                     <option value="ETC">ETC(기타)</option>
                 </select>
                 <select id="pGender">
-                    <option value="MALE">M(남)</option>
-                    <option value="FEMALE">F(여)</option>
+                    <option value="MALE">MALE(남)</option>
+                    <option value="FEMALE">FEMALE(여)</option>
                 </select>
                 <button onclick="createPlayer()">등록</button>
             </div>
-
-            <div class="muted">※ enum 값이 네 코드와 다르면(예: MALE/FEMALE) 아래 스크립트에서 값만 바꾸면 됩니다.</div>
+            <div class="small">※ 서버 enum이 MALE/FEMALE, MEMBER/GUEST/ETC 기준일 때 그대로 사용 가능</div>
         </div>
 
         <div class="box">
@@ -70,7 +79,13 @@
                 </div>
             </div>
 
-            <div class="muted">세션 시작할 참가자를 체크하세요.</div>
+            <div class="row">
+                <button onclick="startSessionFromSelected()">세션 시작(선택 멤버)</button>
+                <button onclick="endSession()">세션 종료(end)</button>
+                <button onclick="loadDashboard()">대시보드 조회</button>
+            </div>
+
+            <div class="muted" style="margin-top:8px;">세션 시작할 멤버를 체크하세요.</div>
             <div style="margin-top:10px; overflow:auto; max-height:320px;">
                 <table>
                     <thead>
@@ -85,36 +100,17 @@
                     <tbody id="playersTbody"></tbody>
                 </table>
             </div>
-
-            <div class="row" style="margin-top:10px;">
-                <button onclick="startSessionFromSelected()">세션 시작(선택한 멤버)</button>
-                <button onclick="endSession()">세션 종료(end)</button>
-            </div>
-            <div class="muted">
-                세션 시작 후에는 대시보드에서 LIST/WAITING/PLAYING이 보입니다.
-            </div>
-        </div>
-    </div>
-
-    <!-- RIGHT: Session / Waiting / Playing -->
-    <div>
-        <div class="box">
-            <div class="sectionTitle">
-                <h2>3) 세션 대시보드</h2>
-                <button onclick="loadDashboard()">대시보드 조회</button>
-            </div>
-            <div id="sessionSummary" class="muted"></div>
-            <pre id="dashboardJson"></pre>
         </div>
 
         <div class="box">
             <div class="sectionTitle">
-                <h2>4) WAITING 팀 생성/삭제</h2>
+                <h2>3) WAITING 팀 만들기</h2>
                 <button onclick="loadDashboard()">대시보드 새로고침</button>
             </div>
 
             <div class="muted">
                 LIST에서 1~4명을 골라 팀을 만들어 WAITING 큐에 쌓습니다.
+                <br/>팁: 아래 LIST 표에서 ID들을 보고 <span class="mono">1,2,3</span> 같이 입력하세요.
             </div>
 
             <div class="row" style="margin-top:10px;">
@@ -123,24 +119,24 @@
             </div>
 
             <div class="row" style="margin-top:10px;">
-                <input id="deleteTeamId" placeholder="waitingTeamId" />
+                <input id="deleteTeamId" placeholder="waitingTeamId (클릭으로 자동입력됨)" style="width:260px;" />
                 <button onclick="deleteWaitingTeam()">대기팀 삭제(해체→LIST)</button>
             </div>
         </div>
 
         <div class="box">
             <div class="sectionTitle">
-                <h2>5) 경기 시작/종료</h2>
+                <h2>4) 경기 시작/종료</h2>
                 <button onclick="loadDashboard()">대시보드 새로고침</button>
             </div>
 
             <div class="row">
-                <input id="startMatchTeamId" placeholder="waitingTeamId" />
+                <input id="startMatchTeamId" placeholder="waitingTeamId (클릭으로 자동입력됨)" style="width:260px;" />
                 <button onclick="startMatch()">경기 시작(WAITING→PLAYING)</button>
             </div>
 
             <div class="row" style="margin-top:10px;">
-                <input id="endMatchId" placeholder="matchId" />
+                <input id="endMatchId" placeholder="matchId (클릭으로 자동입력됨)" style="width:260px;" />
                 <button onclick="endMatch()">경기 종료(PLAYING→LIST)</button>
             </div>
 
@@ -151,18 +147,99 @@
 
     </div>
 
-</div>
+    <!-- RIGHT -->
+    <div>
 
-<div class="box">
-    <div class="sectionTitle">
-        <h2>📌 서버 응답(마지막 요청)</h2>
-        <button onclick="clearLog()">로그 지우기</button>
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>세션 요약</h2>
+                <div class="row">
+                    <button onclick="loadDashboard()">대시보드 조회</button>
+                    <button onclick="toggleRawJson()">RAW JSON 토글</button>
+                </div>
+            </div>
+
+            <div id="sessionSummary" class="muted"></div>
+
+            <div class="twoCol" style="margin-top:10px;">
+                <div>
+                    <h3>LIST (휴식/경기수)</h3>
+                    <div style="overflow:auto; max-height:260px;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>이름</th>
+                                <th>성별</th>
+                                <th>휴식</th>
+                                <th>경기수(남/여/혼/총)</th>
+                            </tr>
+                            </thead>
+                            <tbody id="listTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3>WAITING 팀</h3>
+                    <div style="overflow:auto; max-height:260px;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>teamId</th>
+                                <th>생성</th>
+                                <th>멤버</th>
+                            </tr>
+                            </thead>
+                            <tbody id="waitingTbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="small">teamId 클릭 → 아래 입력칸 자동 채움</div>
+                </div>
+            </div>
+
+            <div style="margin-top:14px;">
+                <h3>PLAYING 경기</h3>
+                <div style="overflow:auto; max-height:320px;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>matchId</th>
+                            <th>번호</th>
+                            <th>타입</th>
+                            <th>시작</th>
+                            <th>진행시간</th>
+                            <th>멤버</th>
+                        </tr>
+                        </thead>
+                        <tbody id="playingTbody"></tbody>
+                    </table>
+                </div>
+                <div class="small">matchId 클릭 → 종료 입력칸 자동 채움</div>
+            </div>
+
+            <div id="rawJsonWrap" style="display:none; margin-top:12px;">
+                <h3>RAW JSON</h3>
+                <pre id="dashboardJson"></pre>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>📌 서버 응답(마지막 요청)</h2>
+                <button onclick="clearLog()">로그 지우기</button>
+            </div>
+            <pre id="result"></pre>
+        </div>
+
     </div>
-    <pre id="result"></pre>
+
 </div>
 
 <script>
     const API = ""; // 같은 서버에서 서빙하므로 빈 문자열이면 상대경로 사용됨
+    let latestDashboard = null;
+    let rawJsonVisible = false;
 
     // ===== util =====
     function show(obj) {
@@ -173,6 +250,13 @@
     }
     function clearLog() {
         document.getElementById("result").textContent = "";
+    }
+    function toggleRawJson() {
+        rawJsonVisible = !rawJsonVisible;
+        document.getElementById("rawJsonWrap").style.display = rawJsonVisible ? "block" : "none";
+        if (rawJsonVisible && latestDashboard) {
+            document.getElementById("dashboardJson").textContent = JSON.stringify(latestDashboard, null, 2);
+        }
     }
 
     async function fetchJson(url, options) {
@@ -195,6 +279,27 @@
             .filter(Boolean)
             .map(Number)
             .filter(n => !Number.isNaN(n));
+    }
+
+    function secondsToHuman(sec) {
+        if (sec == null) return "-";
+        const s = Math.max(0, Number(sec));
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        if (m <= 0) return `${r}s`;
+        return `${m}m ${r}s`;
+    }
+
+    function isoToKST(iso) {
+        if (!iso) return "-";
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        return d.toLocaleString("ko-KR");
+    }
+
+    function pick(obj, ...keys) {
+        for (const k of keys) if (obj && obj[k] != null) return obj[k];
+        return null;
     }
 
     // ===== ClubPlayer =====
@@ -231,8 +336,6 @@
             return;
         }
 
-        // 너의 ClubPlayerCreateRequest DTO에 맞게 필드명이 다를 수 있음:
-        // 보통 { "name": "...", "type": "...", "gender": "..." }
         const payload = { name, type, gender };
 
         const data = await fetchJson("/club-players", {
@@ -286,23 +389,113 @@
     }
 
     function renderDashboard(d) {
-        document.getElementById("dashboardJson").textContent = JSON.stringify(d, null, 2);
+        latestDashboard = d;
 
+        // 요약
         const sum = document.getElementById("sessionSummary");
         if (!d || !d.session) {
             sum.innerHTML = `<span class="pill bad">세션 없음</span> /sessions/start 로 세션을 시작하세요.`;
+            document.getElementById("listTbody").innerHTML = "";
+            document.getElementById("waitingTbody").innerHTML = "";
+            document.getElementById("playingTbody").innerHTML = "";
+            if (rawJsonVisible) document.getElementById("dashboardJson").textContent = JSON.stringify(d, null, 2);
             return;
         }
+
         sum.innerHTML = `
       <span class="pill ok">ACTIVE</span>
-      sessionId=${d.session.sessionId},
-      startedAt=${d.session.startedAt},
-      totalMatches=${d.session.totalMatches}
-      <br/>
-      LIST=${(d.list||[]).length}명 /
-      WAITING teams=${(d.waitingTeams||[]).length}개 /
-      PLAYING matches=${(d.playingMatches||[]).length}개
+      <span class="pill">${"sessionId=" + d.session.sessionId}</span>
+      <span class="pill">${"totalMatches=" + d.session.totalMatches}</span>
+      <div class="small">startedAt: ${isoToKST(d.session.startedAt)}</div>
+      <div class="small">
+        LIST=${(d.list||[]).length}명 /
+        WAITING=${(d.waitingTeams||[]).length}팀 /
+        PLAYING=${(d.playingMatches||[]).length}경기
+      </div>
     `;
+
+        // RAW JSON
+        if (rawJsonVisible) {
+            document.getElementById("dashboardJson").textContent = JSON.stringify(d, null, 2);
+        }
+
+        // LIST 테이블 렌더
+        const listTbody = document.getElementById("listTbody");
+        listTbody.innerHTML = "";
+        (d.list || []).forEach(p => {
+            // 카운트 필드 이름이 프로젝트마다 다를 수 있어 유연하게 받음
+            const maleC = Number(p.maleDoubleCount ?? 0);
+            const femaleC = Number(p.femaleDoubleCount ?? 0);
+            const mixedC = Number(p.mixedDoubleCount ?? 0);
+            const totalC = Number(p.totalMatchCount ?? (maleC + femaleC + mixedC));
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td class="mono">${p.clubPlayerId}</td>
+        <td>${p.name}</td>
+        <td>${p.gender}</td>
+        <td>${secondsToHuman(p.restSeconds)}</td>
+        <td class="mono">${maleC}/${femaleC}/${mixedC}/${totalC}</td>
+      `;
+            listTbody.appendChild(tr);
+        });
+
+        // WAITING 테이블 렌더
+        const waitingTbody = document.getElementById("waitingTbody");
+        waitingTbody.innerHTML = "";
+        (d.waitingTeams || []).forEach(t => {
+            const members = (t.members || []).map(m => `${m.name}(${m.clubPlayerId})`).join(", ");
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td>
+          <span class="clickable mono" onclick="fillTeamId(${t.waitingTeamId})">${t.waitingTeamId}</span>
+          <div class="small">
+            <span class="clickable" onclick="fillStartMatchTeamId(${t.waitingTeamId})">→ 경기시작 입력</span> /
+            <span class="clickable" onclick="fillDeleteTeamId(${t.waitingTeamId})">→ 팀삭제 입력</span>
+          </div>
+        </td>
+        <td>${isoToKST(t.createdAt)}</td>
+        <td>${members}</td>
+      `;
+            waitingTbody.appendChild(tr);
+        });
+
+        // PLAYING 테이블 렌더
+        const playingTbody = document.getElementById("playingTbody");
+        playingTbody.innerHTML = "";
+        (d.playingMatches || []).forEach(m => {
+            const members = (m.members || []).map(x => `${x.name}(${x.clubPlayerId})`).join(", ");
+            const matchType = pick(m, "matchType", "type"); // 서버가 matchType을 내려줄 때
+            const elapsedSeconds = pick(m, "elapsedSeconds", "elapsed", "progressSeconds"); // 서버가 진행시간 내려줄 때
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td>
+          <span class="clickable mono" onclick="fillEndMatchId(${m.matchId})">${m.matchId}</span>
+          <div class="small"><span class="clickable" onclick="fillEndMatchId(${m.matchId})">→ 종료 입력</span></div>
+        </td>
+        <td class="mono">${m.matchNo ?? "-"}</td>
+        <td class="mono">${matchType ?? "-"}</td>
+        <td>${isoToKST(m.startedAt)}</td>
+        <td>${elapsedSeconds == null ? "-" : secondsToHuman(elapsedSeconds)}</td>
+        <td>${members}</td>
+      `;
+            playingTbody.appendChild(tr);
+        });
+    }
+
+    function fillTeamId(id) {
+        fillStartMatchTeamId(id);
+        fillDeleteTeamId(id);
+    }
+    function fillStartMatchTeamId(id) {
+        document.getElementById("startMatchTeamId").value = id;
+    }
+    function fillDeleteTeamId(id) {
+        document.getElementById("deleteTeamId").value = id;
+    }
+    function fillEndMatchId(id) {
+        document.getElementById("endMatchId").value = id;
     }
 
     async function endSession() {
@@ -369,7 +562,6 @@
         try {
             await loadPlayers();
         } catch (e) {
-            // 멤버 API가 아직 없으면 여기서 실패할 수 있음
             show({ hint: "멤버 API(/club-players)가 없거나 경로가 다르면 경로를 맞춰주세요.", error: e });
         }
     })();
