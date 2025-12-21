@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Playcock Admin Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 16px; line-height: 1.35; }
+        h1 { margin: 0 0 12px; }
+        h2 { margin: 0 0 10px; font-size: 18px; }
+        .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+        .box { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        input, select, button { padding: 8px; }
+        button { cursor:pointer; }
+        .muted { color:#666; font-size: 13px; }
+        .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+        pre { background:#f7f7f7; padding: 10px; border-radius: 8px; overflow:auto; max-height: 360px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #eee; padding: 8px; font-size: 14px; }
+        th { background:#fafafa; text-align:left; }
+        .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-right:6px;}
+        .ok { border-color: #b8e2b8; background:#effaef; }
+        .warn { border-color:#f3d1a1; background:#fff7ea; }
+        .bad { border-color:#f0b4b4; background:#fff0f0; }
+        .sectionTitle { display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    </style>
+</head>
+<body>
+
+<h1>🏸 Playcock 통합 관리자 테스트</h1>
+<div class="muted">
+    같은 서버(<code>localhost:8080</code>)에서 HTML을 서빙하면 CORS 없이 바로 동작합니다.
+    <br/>주소: <code>http://localhost:8080/playcock-admin.html</code>
+</div>
+
+<div class="grid">
+
+    <!-- LEFT: ClubPlayer -->
+    <div>
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>1) 멤버(ClubPlayer) 등록</h2>
+                <button onclick="loadPlayers()">멤버 새로고침</button>
+            </div>
+
+            <div class="row">
+                <input id="pName" placeholder="이름 (예: 철수)" />
+                <select id="pType">
+                    <option value="MEMBER">MEMBER(부원)</option>
+                    <option value="GUEST">GUEST(게스트)</option>
+                    <option value="ETC">ETC(기타)</option>
+                </select>
+                <select id="pGender">
+                    <option value="MALE">M(남)</option>
+                    <option value="FEMALE">F(여)</option>
+                </select>
+                <button onclick="createPlayer()">등록</button>
+            </div>
+
+            <div class="muted">※ enum 값이 네 코드와 다르면(예: MALE/FEMALE) 아래 스크립트에서 값만 바꾸면 됩니다.</div>
+        </div>
+
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>2) 멤버 목록 & 세션 참가자 선택</h2>
+                <div class="row">
+                    <button onclick="selectAllPlayers()">전체 선택</button>
+                    <button onclick="clearSelectedPlayers()">선택 해제</button>
+                </div>
+            </div>
+
+            <div class="muted">세션 시작할 참가자를 체크하세요.</div>
+            <div style="margin-top:10px; overflow:auto; max-height:320px;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>선택</th>
+                        <th>ID</th>
+                        <th>이름</th>
+                        <th>유형</th>
+                        <th>성별</th>
+                    </tr>
+                    </thead>
+                    <tbody id="playersTbody"></tbody>
+                </table>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+                <button onclick="startSessionFromSelected()">세션 시작(선택한 멤버)</button>
+                <button onclick="endSession()">세션 종료(end)</button>
+            </div>
+            <div class="muted">
+                세션 시작 후에는 대시보드에서 LIST/WAITING/PLAYING이 보입니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Session / Waiting / Playing -->
+    <div>
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>3) 세션 대시보드</h2>
+                <button onclick="loadDashboard()">대시보드 조회</button>
+            </div>
+            <div id="sessionSummary" class="muted"></div>
+            <pre id="dashboardJson"></pre>
+        </div>
+
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>4) WAITING 팀 생성/삭제</h2>
+                <button onclick="loadDashboard()">대시보드 새로고침</button>
+            </div>
+
+            <div class="muted">
+                LIST에서 1~4명을 골라 팀을 만들어 WAITING 큐에 쌓습니다.
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+                <input id="waitingPickIds" placeholder="LIST에서 고를 ID들 (예: 1,2,3)" style="width:260px;" />
+                <button onclick="createWaitingTeam()">대기팀 생성</button>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+                <input id="deleteTeamId" placeholder="waitingTeamId" />
+                <button onclick="deleteWaitingTeam()">대기팀 삭제(해체→LIST)</button>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="sectionTitle">
+                <h2>5) 경기 시작/종료</h2>
+                <button onclick="loadDashboard()">대시보드 새로고침</button>
+            </div>
+
+            <div class="row">
+                <input id="startMatchTeamId" placeholder="waitingTeamId" />
+                <button onclick="startMatch()">경기 시작(WAITING→PLAYING)</button>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+                <input id="endMatchId" placeholder="matchId" />
+                <button onclick="endMatch()">경기 종료(PLAYING→LIST)</button>
+            </div>
+
+            <div class="muted" style="margin-top:10px;">
+                총 경기 수는 “경기 시작”할 때마다 <b>+1</b> 됩니다. (matchNo 증가)
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="box">
+    <div class="sectionTitle">
+        <h2>📌 서버 응답(마지막 요청)</h2>
+        <button onclick="clearLog()">로그 지우기</button>
+    </div>
+    <pre id="result"></pre>
+</div>
+
+<script>
+    const API = ""; // 같은 서버에서 서빙하므로 빈 문자열이면 상대경로 사용됨
+
+    // ===== util =====
+    function show(obj) {
+        document.getElementById("result").textContent = JSON.stringify(obj, null, 2);
+    }
+    function showText(text) {
+        document.getElementById("result").textContent = String(text);
+    }
+    function clearLog() {
+        document.getElementById("result").textContent = "";
+    }
+
+    async function fetchJson(url, options) {
+        const res = await fetch(API + url, options);
+        const text = await res.text();
+        let body;
+        try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+
+        if (!res.ok) {
+            const err = { status: res.status, statusText: res.statusText, url, body };
+            show(err);
+            throw err;
+        }
+        return body;
+    }
+
+    function parseIds(input) {
+        return input.split(",")
+            .map(s => s.trim())
+            .filter(Boolean)
+            .map(Number)
+            .filter(n => !Number.isNaN(n));
+    }
+
+    // ===== ClubPlayer =====
+    async function loadPlayers() {
+        const data = await fetchJson("/club-players", { method: "GET" });
+        renderPlayersTable(data);
+        show({ ok: true, action: "GET /club-players", data });
+    }
+
+    function renderPlayersTable(players) {
+        const tbody = document.getElementById("playersTbody");
+        tbody.innerHTML = "";
+
+        (players || []).forEach(p => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td><input type="checkbox" class="playerCheck" data-id="${p.id}"/></td>
+        <td>${p.id}</td>
+        <td>${p.name}</td>
+        <td>${p.type}</td>
+        <td>${p.gender}</td>
+      `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function createPlayer() {
+        const name = document.getElementById("pName").value.trim();
+        const type = document.getElementById("pType").value;
+        const gender = document.getElementById("pGender").value;
+
+        if (!name) {
+            showText("이름을 입력하세요.");
+            return;
+        }
+
+        // 너의 ClubPlayerCreateRequest DTO에 맞게 필드명이 다를 수 있음:
+        // 보통 { "name": "...", "type": "...", "gender": "..." }
+        const payload = { name, type, gender };
+
+        const data = await fetchJson("/club-players", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        show({ ok: true, action: "POST /club-players", payload, data });
+        await loadPlayers();
+    }
+
+    function selectAllPlayers() {
+        document.querySelectorAll(".playerCheck").forEach(ch => ch.checked = true);
+    }
+
+    function clearSelectedPlayers() {
+        document.querySelectorAll(".playerCheck").forEach(ch => ch.checked = false);
+    }
+
+    function getSelectedPlayerIds() {
+        return Array.from(document.querySelectorAll(".playerCheck"))
+            .filter(ch => ch.checked)
+            .map(ch => Number(ch.dataset.id));
+    }
+
+    // ===== Session =====
+    async function startSessionFromSelected() {
+        const ids = getSelectedPlayerIds();
+        if (ids.length === 0) {
+            showText("세션 시작할 멤버를 체크하세요.");
+            return;
+        }
+
+        const payload = { participantClubPlayerIds: ids };
+
+        const data = await fetchJson("/sessions/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        show({ ok: true, action: "POST /sessions/start", payload, data });
+        renderDashboard(data);
+    }
+
+    async function loadDashboard() {
+        const data = await fetchJson("/sessions/current/dashboard", { method: "GET" });
+        show({ ok: true, action: "GET /sessions/current/dashboard", data });
+        renderDashboard(data);
+    }
+
+    function renderDashboard(d) {
+        document.getElementById("dashboardJson").textContent = JSON.stringify(d, null, 2);
+
+        const sum = document.getElementById("sessionSummary");
+        if (!d || !d.session) {
+            sum.innerHTML = `<span class="pill bad">세션 없음</span> /sessions/start 로 세션을 시작하세요.`;
+            return;
+        }
+        sum.innerHTML = `
+      <span class="pill ok">ACTIVE</span>
+      sessionId=${d.session.sessionId},
+      startedAt=${d.session.startedAt},
+      totalMatches=${d.session.totalMatches}
+      <br/>
+      LIST=${(d.list||[]).length}명 /
+      WAITING teams=${(d.waitingTeams||[]).length}개 /
+      PLAYING matches=${(d.playingMatches||[]).length}개
+    `;
+    }
+
+    async function endSession() {
+        await fetchJson("/sessions/current/end", { method: "POST" });
+        show({ ok: true, action: "POST /sessions/current/end" });
+    }
+
+    // ===== Waiting Team =====
+    async function createWaitingTeam() {
+        const ids = parseIds(document.getElementById("waitingPickIds").value);
+        if (ids.length < 1 || ids.length > 4) {
+            showText("대기팀은 1~4명 ID를 입력하세요. 예: 1,2,3");
+            return;
+        }
+
+        const payload = { clubPlayerIds: ids };
+
+        const data = await fetchJson("/waiting-teams", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        show({ ok: true, action: "POST /waiting-teams", payload, data });
+        renderDashboard(data);
+    }
+
+    async function deleteWaitingTeam() {
+        const teamId = Number(document.getElementById("deleteTeamId").value);
+        if (!teamId) { showText("waitingTeamId를 입력하세요."); return; }
+
+        const data = await fetchJson(`/waiting-teams/${teamId}`, { method: "DELETE" });
+        show({ ok: true, action: `DELETE /waiting-teams/${teamId}`, data });
+        renderDashboard(data);
+    }
+
+    // ===== Match =====
+    async function startMatch() {
+        const teamId = Number(document.getElementById("startMatchTeamId").value);
+        if (!teamId) { showText("waitingTeamId를 입력하세요."); return; }
+
+        const payload = { waitingTeamId: teamId };
+        const data = await fetchJson("/matches/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        show({ ok: true, action: "POST /matches/start", payload, data });
+        renderDashboard(data);
+    }
+
+    async function endMatch() {
+        const matchId = Number(document.getElementById("endMatchId").value);
+        if (!matchId) { showText("matchId를 입력하세요."); return; }
+
+        const data = await fetchJson(`/matches/${matchId}/end`, { method: "POST" });
+        show({ ok: true, action: `POST /matches/${matchId}/end`, data });
+        renderDashboard(data);
+    }
+
+    // ===== init =====
+    (async function init() {
+        try {
+            await loadPlayers();
+        } catch (e) {
+            // 멤버 API가 아직 없으면 여기서 실패할 수 있음
+            show({ hint: "멤버 API(/club-players)가 없거나 경로가 다르면 경로를 맞춰주세요.", error: e });
+        }
+    })();
+</script>
+
+</body>
+</html>

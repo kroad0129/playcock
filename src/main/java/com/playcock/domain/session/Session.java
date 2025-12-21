@@ -3,12 +3,11 @@ package com.playcock.domain.session;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "session")
 public class Session {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,18 +16,21 @@ public class Session {
     @Column(nullable = false, length = 10)
     private SessionStatus status;
 
+    @Column(nullable = false)
     private LocalDateTime startedAt;
 
     private LocalDateTime endedAt;
 
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SessionParticipant> participants = new ArrayList<>();
+    // ✅ "시작된 경기 수" 누적 카운트
+    @Column(nullable = false)
+    private Integer totalMatches;
 
     protected Session() {}
 
     public Session(LocalDateTime startedAt) {
         this.status = SessionStatus.ACTIVE;
         this.startedAt = startedAt;
+        this.totalMatches = 0;
     }
 
     public void end(LocalDateTime endedAt) {
@@ -36,15 +38,14 @@ public class Session {
         this.endedAt = endedAt;
     }
 
-    public void addParticipant(SessionParticipant participant) {
-        participants.add(participant);
-        participant.setSession(this);
+    public int nextMatchNoAndIncrease() {
+        this.totalMatches = this.totalMatches + 1;
+        return this.totalMatches;
     }
 
     public Long getId() { return id; }
     public SessionStatus getStatus() { return status; }
     public LocalDateTime getStartedAt() { return startedAt; }
     public LocalDateTime getEndedAt() { return endedAt; }
-    public List<SessionParticipant> getParticipants() { return participants; }
+    public Integer getTotalMatches() { return totalMatches; }
 }
-
