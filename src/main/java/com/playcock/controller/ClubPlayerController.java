@@ -26,4 +26,10 @@ public class ClubPlayerController {
     public List<ClubPlayerResponse> list() {
         return clubPlayerService.list();
     }
+
+    // ✅ 소프트 삭제
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        clubPlayerService.softDelete(id);
+    }
 }

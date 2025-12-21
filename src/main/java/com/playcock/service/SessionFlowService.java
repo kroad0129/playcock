@@ -4,6 +4,7 @@ import com.playcock.domain.player.ClubPlayer;
 import com.playcock.domain.player.Gender;
 import com.playcock.domain.session.*;
 import com.playcock.dto.request.MatchStartRequest;
+import com.playcock.dto.request.SessionParticipantsUpdateRequest;
 import com.playcock.dto.request.SessionStartRequest;
 import com.playcock.dto.request.WaitingTeamCreateRequest;
 import com.playcock.dto.response.DashboardResponse;
@@ -303,6 +304,77 @@ public class SessionFlowService {
         if (size == 4 && female == 4) return MatchType.FEMALE_DOUBLE;
         if (size == 4 && male == 4) return MatchType.MALE_DOUBLE;
         return MatchType.MIXED_DOUBLE;
+    }
+
+    public DashboardResponse updateParticipants(SessionParticipantsUpdateRequest req) {
+        Session session = getActiveSessionOrThrow();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Long> addIds = Optional.ofNullable(req.getAddIds()).orElse(List.of());
+        List<Long> removeIds = Optional.ofNullable(req.getRemoveIds()).orElse(List.of());
+
+        // ---- 1) 추가(add) ----
+        if (!addIds.isEmpty()) {
+            // 존재하는 플레이어인지 검증
+            List<ClubPlayer> playersToAdd = clubPlayerRepository.findAllById(addIds);
+            if (playersToAdd.size() != new HashSet<>(addIds).size()) {
+                throw new IllegalArgumentException("addIds에 존재하지 않는 clubPlayerId가 포함되어 있습니다.");
+            }
+
+            for (ClubPlayer p : playersToAdd) {
+                // 이미 세션 참가자면 스킵(멱등)
+                boolean already = sessionParticipantRepository
+                        .findBySessionIdAndClubPlayerId(session.getId(), p.getId())
+                        .isPresent();
+
+                if (already) continue;
+
+                // ✅ 기본 위치는 LIST, 휴식 기준(lastPlayedAt)은 now(합류 시점)로 두는 게 운영에 자연스러움
+                sessionParticipantRepository.save(new SessionParticipant(session, p, now));
+            }
+        }
+
+        // ---- 2) 삭제(remove) ----
+        if (!removeIds.isEmpty()) {
+            // 중복 방지
+            Set<Long> uniqueRemove = new HashSet<>(removeIds);
+
+            for (Long clubPlayerId : uniqueRemove) {
+                SessionParticipant sp = sessionParticipantRepository
+                        .findBySessionIdAndClubPlayerId(session.getId(), clubPlayerId)
+                        .orElseThrow(() -> new IllegalArgumentException("removeIds에 세션 참가자가 아닌 id가 포함되어 있습니다: " + clubPlayerId));
+
+                // ✅ PLAYING 중이면 삭제 금지(가장 안전)
+                if (sp.getLocation() == ParticipantLocation.PLAYING || sp.getMatch() != null) {
+                    throw new IllegalStateException("경기 중인 참가자는 삭제할 수 없습니다. 먼저 경기를 종료하세요: " + sp.getClubPlayer().getName());
+                }
+
+                // ✅ WAITING이면 팀에서 빼고, 팀이 비면 팀 삭제
+                if (sp.getLocation() == ParticipantLocation.WAITING && sp.getWaitingTeam() != null) {
+                    Long teamId = sp.getWaitingTeam().getId();
+
+                    // 참가자 본인을 LIST로 돌려놓고(연관관계 끊기)
+                    sp.moveToList();
+
+                    // 팀에 멤버가 남아있는지 확인 후 0명이면 삭제
+                    List<SessionParticipant> still = sessionParticipantRepository
+                            .findBySessionIdAndWaitingTeamId(session.getId(), teamId);
+
+                    if (still.isEmpty()) {
+                        waitingTeamRepository.deleteById(teamId);
+                    }
+
+                    // 그리고 참가자 삭제(세션에서 제거)
+                    sessionParticipantRepository.delete(sp);
+                    continue;
+                }
+
+                // ✅ LIST면 바로 삭제
+                sessionParticipantRepository.delete(sp);
+            }
+        }
+
+        return dashboard();
     }
 
 }

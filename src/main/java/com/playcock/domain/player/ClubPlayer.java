@@ -21,15 +21,27 @@ public class ClubPlayer {
     @Column(nullable = false, length = 2)
     private Gender gender;
 
+    // ✅ 소프트 삭제 플래그
+    @Column(nullable = false)
+    private boolean active = true;
+
     protected ClubPlayer() {
-        // JPA가 DB에서 조회할 때 객체 생성에 필요
+        // JPA 기본 생성자
     }
 
     public ClubPlayer(String name, PlayerType type, Gender gender) {
         this.name = name;
         this.type = type;
         this.gender = gender;
+        this.active = true;
     }
+
+    // ✅ 소프트 삭제
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public boolean isActive() { return active; }
 
     public Long getId() { return id; }
     public String getName() { return name; }

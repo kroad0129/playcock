@@ -1,6 +1,7 @@
 package com.playcock.controller;
 
 import com.playcock.dto.request.MatchStartRequest;
+import com.playcock.dto.request.SessionParticipantsUpdateRequest;
 import com.playcock.dto.request.SessionStartRequest;
 import com.playcock.dto.request.WaitingTeamCreateRequest;
 import com.playcock.dto.response.DashboardResponse;
@@ -56,5 +57,10 @@ public class SessionFlowController {
     @PostMapping("/matches/{matchId}/end")
     public DashboardResponse endMatch(@PathVariable Long matchId) {
         return service.endMatch(matchId);
+    }
+
+    @PostMapping("/sessions/current/participants")
+    public DashboardResponse updateParticipants(@RequestBody SessionParticipantsUpdateRequest req) {
+        return service.updateParticipants(req);
     }
 }
